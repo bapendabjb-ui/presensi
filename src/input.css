@@ -1,0 +1,222 @@
+@import "tailwindcss";
+
+@source "../public";
+@source "../server";
+
+/* ============================================================
+   Design tokens — minimalis, kontras tinggi, dual-mode
+   ============================================================ */
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, sans-serif;
+
+  /* Brand — indigo-violet elektrik */
+  --color-brand-50: #eef0ff;
+  --color-brand-100: #e0e3ff;
+  --color-brand-200: #c7cbfe;
+  --color-brand-300: #a5a9fc;
+  --color-brand-400: #8b83f8;
+  --color-brand-500: #7a63f1;
+  --color-brand-600: #6d45e4;
+  --color-brand-700: #5e35c9;
+  --color-brand-800: #4d2ea2;
+  --color-brand-900: #412c81;
+  --color-brand-950: #281a4b;
+
+  --radius-card: 1rem;
+  --radius-xl2: 1.25rem;
+
+  --shadow-soft: 0 1px 2px rgb(16 16 20 / 0.04), 0 8px 24px -12px rgb(16 16 20 / 0.12);
+  --shadow-lift: 0 2px 4px rgb(16 16 20 / 0.05), 0 18px 40px -18px rgb(16 16 20 / 0.25);
+
+  --animate-pop: pop 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-rise: rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-sweep: sweep 2.4s ease-in-out infinite;
+}
+
+@keyframes pop {
+  0%   { transform: scale(0.82); opacity: 0 }
+  60%  { transform: scale(1.04); opacity: 1 }
+  100% { transform: scale(1);    opacity: 1 }
+}
+@keyframes rise {
+  from { transform: translateY(10px); opacity: 0 }
+  to   { transform: translateY(0);    opacity: 1 }
+}
+@keyframes sweep {
+  0%   { transform: translateY(-42%) }
+  50%  { transform: translateY(42%) }
+  100% { transform: translateY(-42%) }
+}
+
+/* ============================================================
+   Surface variables — light default, dark override
+   ============================================================ */
+@layer base {
+  :root {
+    --surface-page: #f7f7f8;
+    --surface-card: #ffffff;
+    --surface-sunken: #f1f1f3;
+    --surface-hover: #f6f6f7;
+    --line: #e7e7ea;
+    --line-strong: #d6d6dc;
+    --text-strong: #101014;
+    --text: #33333d;
+    --text-muted: #77778a;
+  }
+
+  .dark {
+    --surface-page: #08080a;
+    --surface-card: #121216;
+    --surface-sunken: #1a1a20;
+    --surface-hover: #1c1c23;
+    --line: #24242c;
+    --line-strong: #33333e;
+    --text-strong: #f7f7fa;
+    --text: #d3d3dd;
+    --text-muted: #8b8b9d;
+  }
+
+  * { border-color: var(--line); }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    background: var(--surface-page);
+    color: var(--text);
+    font-feature-settings: "cv11", "ss01";
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    color: var(--text-strong);
+    letter-spacing: -0.02em;
+  }
+
+  ::selection { background: var(--color-brand-500); color: #fff; }
+
+  /* Scrollbar halus */
+  ::-webkit-scrollbar { width: 10px; height: 10px }
+  ::-webkit-scrollbar-track { background: transparent }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border: 3px solid var(--surface-page);
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-muted) }
+
+  [x-cloak] { display: none !important }
+}
+
+/* ============================================================
+   Utility token — dideklarasikan sebagai @utility supaya bisa
+   dipakai di dalam @apply pada blok components di bawah.
+   ============================================================ */
+@utility surface        { background: var(--surface-card) }
+@utility surface-page   { background: var(--surface-page) }
+@utility surface-sunken { background: var(--surface-sunken) }
+@utility surface-hover  { background: var(--surface-hover) }
+@utility text-strong    { color: var(--text-strong) }
+@utility text-base-c    { color: var(--text) }
+@utility text-muted     { color: var(--text-muted) }
+@utility line           { border-color: var(--line) }
+
+/* ============================================================
+   Component utilities
+   ============================================================ */
+@layer components {
+  .card {
+    background: var(--surface-card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 h-10
+           text-sm font-semibold whitespace-nowrap transition
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/60
+           focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none;
+    ring-offset-color: var(--surface-page);
+  }
+  .btn-primary {
+    @apply bg-brand-600 text-white hover:bg-brand-700 active:bg-brand-800;
+    box-shadow: 0 1px 2px rgb(93 53 201 / 0.2), 0 8px 20px -10px rgb(109 69 228 / 0.6);
+  }
+  .btn-ghost {
+    color: var(--text);
+    @apply hover:bg-[var(--surface-hover)];
+  }
+  .btn-outline {
+    background: var(--surface-card);
+    color: var(--text-strong);
+    @apply border hover:bg-[var(--surface-hover)];
+  }
+  .btn-danger { @apply bg-rose-600 text-white hover:bg-rose-700 }
+  .btn-sm { @apply h-8 px-3 text-[13px] rounded-lg gap-1.5 }
+  .btn-icon { @apply h-9 w-9 px-0 rounded-lg }
+
+  .input {
+    background: var(--surface-card);
+    color: var(--text-strong);
+    @apply w-full h-10 rounded-xl border px-3.5 text-sm transition
+           placeholder:text-[var(--text-muted)]
+           focus:outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/12;
+  }
+  textarea.input { @apply h-auto py-2.5 leading-relaxed }
+  select.input { @apply pr-9 appearance-none }
+
+  .label { @apply block text-[13px] font-semibold mb-1.5 text-strong }
+
+  .badge {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1
+           text-[11px] font-bold uppercase tracking-wide;
+  }
+  .badge-ok    { @apply bg-emerald-500/12 text-emerald-700 dark:text-emerald-400 }
+  .badge-wait  { @apply bg-amber-500/14 text-amber-700 dark:text-amber-400 }
+  .badge-off   { @apply bg-zinc-500/12 text-zinc-600 dark:text-zinc-400 }
+  .badge-live  { @apply bg-brand-500/14 text-brand-700 dark:text-brand-300 }
+
+  .nav-item {
+    @apply flex items-center gap-3 rounded-xl px-3 h-10 text-sm font-medium
+           transition text-[var(--text-muted)] hover:bg-[var(--surface-hover)]
+           hover:text-[var(--text-strong)];
+  }
+  .nav-item[aria-current="page"] {
+    background: var(--surface-sunken);
+    color: var(--text-strong);
+    @apply font-semibold;
+  }
+  .nav-item[aria-current="page"] .lucide { @apply text-brand-500 }
+
+  .th { @apply text-left text-[11px] font-bold uppercase tracking-wider text-muted px-4 py-3 }
+  .td { @apply px-4 py-3 text-sm align-middle }
+  .row-hover { @apply transition hover:bg-[var(--surface-hover)] }
+
+  .skeleton {
+    background: linear-gradient(90deg, var(--surface-sunken) 25%, var(--surface-hover) 50%, var(--surface-sunken) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+  @keyframes shimmer { to { background-position: -200% 0 } }
+
+  /* Latar gradasi lembut ala 2026 */
+  .mesh::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(48rem 32rem at 12% -8%, rgb(122 99 241 / 0.14), transparent 60%),
+      radial-gradient(40rem 28rem at 92% 4%, rgb(16 185 129 / 0.10), transparent 60%);
+  }
+}
+
+@media print {
+  .no-print { display: none !important }
+  body { background: #fff !important; color: #000 !important }
+  .card { box-shadow: none !important; border-color: #ccc !important }
+  @page { margin: 14mm }
+}

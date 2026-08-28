@@ -1,0 +1,30 @@
+{
+  "name": "presensi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aplikasi presensi peserta untuk berbagai event — QR check-in, multi-event, dashboard, dan laporan.",
+  "type": "module",
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tailwindcss -i ./src/input.css -o ./public/css/app.css --minify && node scripts/copy-vendor.js",
+    "dev": "concurrently -k -n css,srv -c cyan,magenta \"tailwindcss -i ./src/input.css -o ./public/css/app.css --watch\" \"node --watch server/index.js\"",
+    "start": "node server/index.js",
+    "seed": "node scripts/seed.js"
+  },
+  "dependencies": {
+    "cookie-parser": "^1.4.7",
+    "express": "^4.21.2",
+    "jsqr": "^1.4.0",
+    "lucide": "^0.469.0",
+    "mysql2": "^3.11.5",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.0.0",
+    "concurrently": "^9.1.2",
+    "tailwindcss": "^4.0.0"
+  }
+}

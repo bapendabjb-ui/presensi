@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="id" class="h-full dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Kiosk Check-in · Presensi</title>
+  <meta name="theme-color" content="#08080a" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body class="h-full font-sans overflow-hidden select-none">
+  <div class="h-full flex flex-col">
+
+    <!-- ============================ Topbar ============================ -->
+    <header class="h-16 shrink-0 flex items-center gap-4 px-5 sm:px-7 border-b line surface">
+      <div class="flex items-center gap-2.5">
+        <div class="grid place-items-center h-9 w-9 rounded-xl bg-brand-600 text-white">
+          <i data-lucide="scan-line" class="h-[18px] w-[18px]"></i>
+        </div>
+        <div class="hidden sm:block">
+          <p class="font-extrabold text-strong text-[15px] leading-none tracking-tight">Presensi</p>
+          <p class="text-[10px] text-muted font-semibold mt-1 uppercase tracking-wider">Mode Kiosk</p>
+        </div>
+      </div>
+
+      <div class="ml-auto flex items-center gap-2">
+        <div class="relative">
+          <select id="event" class="input h-9 w-auto max-w-[220px] text-[13px] pr-9"></select>
+          <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted pointer-events-none"></i>
+        </div>
+        <button id="fullscreen" class="btn btn-ghost btn-icon" title="Layar penuh">
+          <i data-lucide="maximize" class="h-[18px] w-[18px]"></i>
+        </button>
+        <button id="theme" class="btn btn-ghost btn-icon" title="Ganti tema">
+          <i data-lucide="sun-moon" class="h-[18px] w-[18px]"></i>
+        </button>
+        <a href="/" class="btn btn-outline btn-sm">
+          <i data-lucide="log-out" class="h-4 w-4"></i>
+          <span class="hidden sm:inline">Keluar kiosk</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- ============================ Panggung ============================ -->
+    <main class="flex-1 min-h-0 grid lg:grid-cols-[1.15fr_1fr]">
+
+      <!-- Kamera -->
+      <section class="relative min-h-0 bg-black">
+        <video id="video" class="absolute inset-0 h-full w-full object-cover" muted playsinline></video>
+
+        <!-- Bingkai bidik -->
+        <div id="frame" class="absolute inset-0 hidden">
+          <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(62vh,62%)] aspect-square">
+            <div class="absolute inset-0 rounded-3xl" style="box-shadow:0 0 0 9999px rgba(0,0,0,.55)"></div>
+            <div class="absolute -left-1.5 -top-1.5 h-12 w-12 border-t-4 border-l-4 border-white/90 rounded-tl-2xl"></div>
+            <div class="absolute -right-1.5 -top-1.5 h-12 w-12 border-t-4 border-r-4 border-white/90 rounded-tr-2xl"></div>
+            <div class="absolute -left-1.5 -bottom-1.5 h-12 w-12 border-b-4 border-l-4 border-white/90 rounded-bl-2xl"></div>
+            <div class="absolute -right-1.5 -bottom-1.5 h-12 w-12 border-b-4 border-r-4 border-white/90 rounded-br-2xl"></div>
+            <div class="absolute left-3 right-3 top-1/2 h-1 rounded-full bg-brand-400 animate-sweep
+                        shadow-[0_0_22px_4px_var(--color-brand-400)]"></div>
+          </div>
+          <p class="absolute bottom-7 inset-x-0 text-center text-white/85 text-sm font-semibold px-6">
+            Arahkan QR ke dalam bingkai
+          </p>
+        </div>
+
+        <!-- Kamera mati -->
+        <div id="idle" class="absolute inset-0 grid place-items-center p-8 text-center">
+          <div class="max-w-sm">
+            <div class="mx-auto grid place-items-center h-16 w-16 rounded-2xl bg-white/10 text-white/70 mb-4">
+              <i data-lucide="camera-off" class="h-7 w-7"></i>
+            </div>
+            <p class="text-white font-extrabold text-lg">Kamera belum aktif</p>
+            <p id="idle-msg" class="text-white/60 text-sm mt-2 leading-relaxed">
+              Nyalakan kamera untuk memindai QR peserta. Kode juga bisa diketik manual di panel kanan.
+            </p>
+            <button id="start" class="btn btn-primary mt-5 h-11 px-5">
+              <i data-lucide="camera" class="h-4 w-4"></i> Nyalakan kamera
+            </button>
+          </div>
+        </div>
+
+        <!-- Kontrol melayang -->
+        <div id="cam-controls" class="absolute top-4 left-4 hidden items-center gap-2">
+          <button id="stop" class="h-9 px-3 rounded-xl bg-black/55 backdrop-blur text-white text-[13px]
+                                   font-semibold inline-flex items-center gap-1.5 hover:bg-black/70 transition">
+            <i data-lucide="camera-off" class="h-4 w-4"></i> Matikan
+          </button>
+          <select id="camera" class="hidden h-9 rounded-xl bg-black/55 backdrop-blur text-white text-[13px]
+                                     font-semibold px-3 border-0 outline-none max-w-[170px]"></select>
+        </div>
+      </section>
+
+      <!-- Panel kanan -->
+      <section class="min-h-0 flex flex-col surface-page border-l line">
+
+        <!-- Hasil scan -->
+        <div id="result" class="flex-1 min-h-0 grid place-items-center p-6 sm:p-8"></div>
+
+        <!-- Statistik langsung -->
+        <div class="shrink-0 grid grid-cols-3 divide-x line border-t line surface">
+          <div class="px-4 py-4 text-center">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-muted">Hadir</p>
+            <p id="s-hadir" class="text-2xl font-extrabold text-emerald-500 mt-1 tabular-nums">0</p>
+          </div>
+          <div class="px-4 py-4 text-center">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-muted">Belum</p>
+            <p id="s-belum" class="text-2xl font-extrabold text-amber-500 mt-1 tabular-nums">0</p>
+          </div>
+          <div class="px-4 py-4 text-center">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-muted">Total</p>
+            <p id="s-total" class="text-2xl font-extrabold text-strong mt-1 tabular-nums">0</p>
+          </div>
+        </div>
+
+        <!-- Input manual -->
+        <form id="form" class="shrink-0 border-t line surface p-4 flex gap-2">
+          <input id="code" class="input h-12 font-bold tracking-[0.16em] uppercase text-center"
+                 placeholder="KETIK KODE PESERTA" autocomplete="off" autofocus />
+          <button class="btn btn-primary h-12 px-5 shrink-0">
+            <i data-lucide="corner-down-left" class="h-[18px] w-[18px]"></i>
+          </button>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast-root" class="fixed bottom-5 left-5 z-[100] flex flex-col gap-2.5 pointer-events-none"></div>
+
+  <script src="/vendor/lucide.min.js"></script>
+  <script src="/vendor/jsQR.js"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/scanner.js"></script>
+  <script src="/js/kiosk.js"></script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Badge Peserta · Presensi</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/app.css" />
+  <style>
+    @page { size: A6 landscape; margin: 0 }
+    @media print {
+      body { background: #fff }
+      .badge-card { border: none !important; border-radius: 0 !important; box-shadow: none !important }
+    }
+  </style>
+</head>
+<body class="font-sans surface-page min-h-screen">
+
+  <div class="no-print sticky top-0 z-10 surface border-b line">
+    <div class="max-w-3xl mx-auto px-5 h-14 flex items-center gap-3">
+      <a href="/" class="btn btn-ghost btn-sm"><i data-lucide="arrow-left" class="h-4 w-4"></i> Panel</a>
+      <p class="text-sm font-bold text-strong ml-1">Badge peserta</p>
+      <div class="ml-auto flex gap-2">
+        <button id="theme" class="btn btn-ghost btn-icon" aria-label="Ganti tema">
+          <i data-lucide="sun-moon" class="h-4 w-4"></i>
+        </button>
+        <button onclick="print()" class="btn btn-primary btn-sm">
+          <i data-lucide="printer" class="h-4 w-4"></i> Cetak
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <main class="max-w-3xl mx-auto p-5 sm:p-8">
+    <div id="badge"></div>
+    <p class="no-print text-center text-[12px] text-muted mt-5">
+      Ukuran cetak: A6 lanskap (105 × 148 mm). Sesuaikan di dialog cetak bila perlu.
+    </p>
+  </main>
+
+  <script src="/vendor/lucide.min.js"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/ui.js"></script>
+  <script>
+    (async function () {
+      const { api, esc, fmtDate, emptyState } = window.UI;
+      const id = location.pathname.split("/").pop();
+      const root = document.getElementById("badge");
+
+      try {
+        const { data } = await api.get("/api/participants?limit=1000");
+        const p = data.find((x) => String(x.id) === String(id));
+        if (!p) throw new Error("Peserta tidak ditemukan.");
+
+        const events = await api.get("/api/events");
+        const ev = events.find((e) => String(e.id) === String(p.event_id));
+
+        root.innerHTML =
+          '<div class="badge-card card p-8 mx-auto" style="max-width:560px">' +
+            '<div class="flex items-start justify-between gap-6">' +
+              '<div class="min-w-0">' +
+                '<p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-brand-500">' +
+                  esc(ev ? ev.name : "Event") + "</p>" +
+                '<h1 class="text-[26px] font-extrabold leading-tight mt-2 break-words">' + esc(p.name) + "</h1>" +
+                (p.org ? '<p class="text-sm text-muted mt-1.5">' + esc(p.org) + "</p>" : "") +
+                '<span class="badge badge-live mt-4">' + esc(p.ticket_type) + "</span>" +
+              "</div>" +
+              '<div class="shrink-0 text-center">' +
+                '<div class="p-2.5 bg-white rounded-xl border line">' +
+                  '<img src="/api/participants/' + p.id + '/qr.png?size=360" alt="QR" class="h-32 w-32 block" />' +
+                "</div>" +
+                '<p class="text-[13px] font-extrabold tracking-[0.1em] text-strong mt-2">' + esc(p.code) + "</p>" +
+              "</div>" +
+            "</div>" +
+            '<div class="mt-7 pt-5 border-t line flex items-center justify-between gap-4">' +
+              '<div class="flex items-center gap-2 text-muted">' +
+                '<i data-lucide="calendar" class="h-4 w-4"></i>' +
+                '<span class="text-[12px] font-semibold">' +
+                  (ev && ev.starts_at ? esc(fmtDate(ev.starts_at, true)) : "Tanggal menyusul") + "</span>" +
+              "</div>" +
+              (ev && ev.location
+                ? '<div class="flex items-center gap-2 text-muted min-w-0">' +
+                  '<i data-lucide="map-pin" class="h-4 w-4 shrink-0"></i>' +
+                  '<span class="text-[12px] font-semibold truncate">' + esc(ev.location) + "</span></div>"
+                : "") +
+            "</div>" +
+          "</div>";
+      } catch (err) {
+        root.innerHTML = '<div class="card">' +
+          emptyState({ icon: "user-x", title: "Badge tidak tersedia", message: err.message }) + "</div>";
+      }
+
+      lucide.createIcons({ nameAttr: "data-lucide" });
+    })();
+  </script>
+</body>
+</html>

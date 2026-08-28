@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Halaman tidak ditemukan · Presensi</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/app.css" />
+  <script>
+    if (localStorage.theme === "dark" || (!("theme" in localStorage) &&
+        matchMedia("(prefers-color-scheme: dark)").matches)) {
+      document.documentElement.classList.add("dark");
+    }
+  </script>
+</head>
+<body class="h-full font-sans mesh">
+  <main class="relative z-10 h-full grid place-items-center p-6 text-center">
+    <div class="max-w-sm animate-rise">
+      <div class="mx-auto grid place-items-center h-16 w-16 rounded-2xl surface border line text-brand-500 mb-5">
+        <i data-lucide="compass" class="h-7 w-7"></i>
+      </div>
+      <p class="text-[64px] font-extrabold leading-none tracking-tighter text-strong">404</p>
+      <h1 class="text-xl font-extrabold mt-3">Halaman tidak ditemukan</h1>
+      <p class="text-sm text-muted mt-2 leading-relaxed">
+        Alamat yang Anda buka tidak ada atau sudah dipindahkan.
+      </p>
+      <a href="/" class="btn btn-primary mt-6">
+        <i data-lucide="arrow-left" class="h-4 w-4"></i> Kembali ke panel
+      </a>
+    </div>
+  </main>
+  <script src="/vendor/lucide.min.js"></script>
+  <script src="/js/theme.js"></script>
+</body>
+</html>

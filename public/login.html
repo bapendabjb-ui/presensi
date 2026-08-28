@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Masuk · Presensi</title>
+  <meta name="theme-color" content="#08080a" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/app.css" />
+  <script>
+    // Terapkan tema sebelum paint agar tidak ada kedipan putih.
+    if (localStorage.theme === "dark" || (!("theme" in localStorage) &&
+        matchMedia("(prefers-color-scheme: dark)").matches)) {
+      document.documentElement.classList.add("dark");
+    }
+  </script>
+</head>
+<body class="h-full font-sans mesh">
+  <main class="relative z-10 min-h-full grid lg:grid-cols-2">
+
+    <!-- Panel kiri: identitas produk -->
+    <section class="hidden lg:flex flex-col justify-between p-12 xl:p-16 border-r line">
+      <div class="flex items-center gap-3">
+        <div class="grid place-items-center h-10 w-10 rounded-xl bg-brand-600 text-white shadow-lg shadow-brand-600/30">
+          <i data-lucide="scan-line" class="h-5 w-5"></i>
+        </div>
+        <div>
+          <p class="font-extrabold text-strong tracking-tight leading-none">Presensi</p>
+          <p class="text-[11px] text-muted font-medium mt-0.5">Event Attendance System</p>
+        </div>
+      </div>
+
+      <div class="max-w-md animate-rise">
+        <h1 class="text-4xl xl:text-5xl font-extrabold leading-[1.08]">
+          Antrean masuk<br />
+          <span class="text-brand-500">tanpa kertas.</span>
+        </h1>
+        <p class="mt-5 text-[15px] leading-relaxed text-muted">
+          Kelola banyak event sekaligus, catat kehadiran lewat pindai QR,
+          dan tarik laporan presensi kapan pun dibutuhkan.
+        </p>
+
+        <ul class="mt-9 space-y-3.5">
+          <li class="flex items-start gap-3">
+            <i data-lucide="qr-code" class="h-[18px] w-[18px] mt-0.5 text-brand-500 shrink-0"></i>
+            <span class="text-sm">Mode kiosk layar penuh dengan pindai kamera</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <i data-lucide="layers" class="h-[18px] w-[18px] mt-0.5 text-brand-500 shrink-0"></i>
+            <span class="text-sm">Banyak event, tiap peserta punya kode unik</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <i data-lucide="file-down" class="h-[18px] w-[18px] mt-0.5 text-brand-500 shrink-0"></i>
+            <span class="text-sm">Ekspor CSV &amp; laporan siap cetak</span>
+          </li>
+        </ul>
+      </div>
+
+      <p class="text-xs text-muted">© <span id="year"></span> Presensi</p>
+    </section>
+
+    <!-- Panel kanan: form -->
+    <section class="flex items-center justify-center p-6 sm:p-10">
+      <div class="w-full max-w-sm animate-rise">
+        <div class="lg:hidden flex items-center gap-3 mb-9">
+          <div class="grid place-items-center h-10 w-10 rounded-xl bg-brand-600 text-white">
+            <i data-lucide="scan-line" class="h-5 w-5"></i>
+          </div>
+          <p class="font-extrabold text-strong text-lg tracking-tight">Presensi</p>
+        </div>
+
+        <h2 class="text-2xl font-extrabold">Masuk ke panel</h2>
+        <p class="mt-1.5 text-sm text-muted">Masukkan password admin untuk melanjutkan.</p>
+
+        <form id="form" class="mt-8 space-y-4" novalidate>
+          <div>
+            <label class="label" for="password">Password admin</label>
+            <div class="relative">
+              <i data-lucide="lock" class="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted pointer-events-none"></i>
+              <input id="password" name="password" type="password" autocomplete="current-password"
+                     class="input pl-10 pr-11" placeholder="••••••••" required autofocus />
+              <button type="button" id="toggle" aria-label="Tampilkan password"
+                      class="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 grid place-items-center rounded-lg text-muted hover:bg-[var(--surface-hover)] transition">
+                <i data-lucide="eye" class="h-4 w-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <p id="error" class="hidden items-center gap-2 text-sm text-rose-600 dark:text-rose-400 font-medium">
+            <i data-lucide="circle-alert" class="h-4 w-4 shrink-0"></i><span></span>
+          </p>
+
+          <button type="submit" id="submit" class="btn btn-primary w-full h-11">
+            <span class="label-text">Masuk</span>
+            <i data-lucide="arrow-right" class="h-4 w-4"></i>
+          </button>
+        </form>
+
+        <div class="mt-8 flex items-center justify-between">
+          <p class="text-xs text-muted">Butuh bantuan? Hubungi panitia.</p>
+          <button id="theme" class="btn btn-ghost btn-icon" aria-label="Ganti tema">
+            <i data-lucide="sun-moon" class="h-4 w-4"></i>
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/vendor/lucide.min.js"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/login.js"></script>
+</body>
+</html>
