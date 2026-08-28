@@ -1,5 +1,7 @@
 import "./env.js";
 
+import fs from "node:fs";
+import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import express from "express";
@@ -22,25 +24,82 @@ app.use(express.json({ limit: "8mb" })); // muat untuk impor CSV besar
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 
+/* ------------------------------ Versi aset -------------------------------- */
+/**
+ * Sidik jari isi seluruh CSS & JS. Nilainya ditempelkan sebagai ?v= pada
+ * setiap tautan aset di HTML, sehingga satu deploy baru otomatis mengubah
+ * URL-nya. Tanpa ini, browser yang sudah menyimpan app.js lama akan terus
+ * memakainya sampai cache kedaluwarsa — perubahan tidak muncul di layar.
+ */
+function computeAssetVersion() {
+  const hash = crypto.createHash("sha1");
+  for (const dir of ["css", "js", "vendor"]) {
+    const full = path.join(PUBLIC_DIR, dir);
+    let entries = [];
+    try {
+      entries = fs.readdirSync(full).sort();
+    } catch {
+      continue; // folder vendor belum ada sebelum `npm run build`
+    }
+    for (const name of entries) {
+      try {
+        hash.update(name).update(fs.readFileSync(path.join(full, name)));
+      } catch { /* lewati berkas yang tidak terbaca */ }
+    }
+  }
+  return hash.digest("hex").slice(0, 10);
+}
+
+const ASSET_VERSION = computeAssetVersion();
+
 /* --------------------------------- Static --------------------------------- */
+const IS_PROD = process.env.NODE_ENV === "production";
+
 app.use(
   express.static(PUBLIC_DIR, {
     index: false,
-    maxAge: process.env.NODE_ENV === "production" ? "7d" : 0,
+    // Aman menyimpan lama karena URL sudah bertanda versi.
+    maxAge: IS_PROD ? "365d" : 0,
     setHeaders(res, filePath) {
       if (filePath.endsWith(".html")) res.setHeader("Cache-Control", "no-cache");
+      else if (IS_PROD) res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     },
   })
 );
 
-const page = (name) => (req, res) => res.sendFile(path.join(PUBLIC_DIR, name));
+/**
+ * Menyajikan halaman HTML sambil menempelkan ?v= pada tautan /css, /js,
+ * dan /vendor. Hasilnya disimpan di memori — berkasnya tidak berubah
+ * selama proses berjalan.
+ */
+const pageCache = new Map();
+
+function page(name) {
+  return (req, res) => {
+    let html = pageCache.get(name);
+
+    if (html === undefined) {
+      html = fs
+        .readFileSync(path.join(PUBLIC_DIR, name), "utf8")
+        .replace(
+          /(["'])(\/(?:css|js|vendor)\/[^"'?]+)\1/g,
+          (m, quote, url) => `${quote}${url}?v=${ASSET_VERSION}${quote}`
+        );
+      pageCache.set(name, html);
+    }
+
+    res.type("html").set("Cache-Control", "no-cache").send(html);
+  };
+}
 
 /* ---------------------------------- Auth ---------------------------------- */
-app.get("/healthz", (req, res) => res.json({ ok: true, db: dbInfo().database }));
+app.get("/healthz", (req, res) =>
+  res.json({ ok: true, db: dbInfo().database, assets: ASSET_VERSION })
+);
 
 app.get("/login", (req, res) => {
   if (currentUser(req)) return res.redirect("/");
-  res.sendFile(path.join(PUBLIC_DIR, "login.html"));
+  page("login.html")(req, res);
 });
 
 app.post("/api/login", (req, res) => {
@@ -78,7 +137,8 @@ app.get("/daftar/:token", page("register.html"));
 /* --------------------------- 404 & error handler -------------------------- */
 app.use((req, res) => {
   if (req.path.startsWith("/api/")) return res.status(404).json({ error: "Endpoint tidak ditemukan." });
-  res.status(404).sendFile(path.join(PUBLIC_DIR, "404.html"));
+  res.status(404);
+  page("404.html")(req, res);
 });
 
 app.use((err, req, res, next) => {
