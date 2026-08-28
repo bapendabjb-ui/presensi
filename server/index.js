@@ -11,6 +11,7 @@ import eventsRouter from "./routes/events.js";
 import participantsRouter from "./routes/participants.js";
 import checkinRouter from "./routes/checkin.js";
 import reportsRouter from "./routes/reports.js";
+import publicRouter from "./routes/public.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(__dirname, "..", "public");
@@ -62,12 +63,17 @@ app.use("/api/events", eventsRouter);
 app.use("/api/participants", participantsRouter);
 app.use("/api/checkin", checkinRouter);
 app.use("/api/reports", reportsRouter);
+app.use("/api/public", publicRouter); // tanpa autentikasi — pendaftaran mandiri
 
 /* --------------------------------- Halaman -------------------------------- */
 app.get("/", requirePage, page("app.html"));
 app.get("/kiosk", requirePage, page("kiosk.html"));
 app.get("/badge/:id", requirePage, page("badge.html"));
 app.get("/laporan/:id", requirePage, page("report.html"));
+app.get("/poster/:id", requirePage, page("poster.html"));
+
+/* Halaman pendaftaran mandiri — publik, dibuka pengunjung lewat QR. */
+app.get("/daftar/:token", page("register.html"));
 
 /* --------------------------- 404 & error handler -------------------------- */
 app.use((req, res) => {

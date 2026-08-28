@@ -17,6 +17,7 @@ proses build, jadi aplikasi tetap jalan meski jaringan terbatas.
 | **Dashboard** | Kartu statistik, grafik tren check-in per jam, cincin tingkat kehadiran, aktivitas terbaru |
 | **Event** | Buat/ubah/hapus event, status draft–aktif–selesai, jadwal & lokasi, progres kehadiran |
 | **Peserta** | Tabel dengan pencarian & filter, tambah/ubah/hapus, impor CSV massal, kode QR unik otomatis |
+| **Pendaftaran mandiri** | QR publik per event — pengunjung memindai dengan HP, isi form, langsung jadi peserta. Poster A4 siap cetak |
 | **Check-in** | Pindai QR lewat kamera, input kode manual, dukungan barcode scanner USB, batalkan salah scan |
 | **Mode Kiosk** | Layar penuh untuk meja registrasi: bingkai pindai, umpan balik besar, nada & getar, statistik langsung |
 | **Laporan** | Rekap per event, rincian per tipe tiket, ekspor CSV, halaman cetak dengan kolom tanda tangan |
@@ -103,6 +104,7 @@ server/
     events.js           CRUD event + agregat peserta/hadir
     participants.js     CRUD peserta, impor CSV, QR PNG
     checkin.js          Proses scan, batalkan, riwayat
+    public.js           Pendaftaran mandiri (publik, rate-limited)
     reports.js          Ringkasan, tren, rincian, ekspor CSV
 src/input.css           Design token & komponen Tailwind v4
 public/
@@ -111,16 +113,68 @@ public/
   kiosk.html            Layar meja registrasi
   report.html           Pratinjau cetak laporan
   badge.html            Badge peserta siap cetak
+  register.html         Pendaftaran mandiri (dibuka pengunjung dari HP)
+  poster.html           Poster QR pendaftaran, siap cetak A4
   js/
     ui.js               API client, format, toast, modal, grafik SVG
     app.js              Router + seluruh tampilan panel
     kiosk.js            Logika layar kiosk
+    register.js         Logika halaman pendaftaran mandiri
     scanner.js          Pemindai QR (BarcodeDetector / jsQR)
     theme.js            Pengalih tema
 scripts/
   copy-vendor.js        Salin lucide & jsQR ke public/vendor
   seed.js               Data contoh
 ```
+
+---
+
+## Pendaftaran mandiri (pengunjung umum)
+
+Selain daftar tertutup yang disiapkan panitia, tiap event bisa membuka **pendaftaran
+mandiri**: pengunjung memindai satu QR di pintu masuk, mengisi nama dan kontak, lalu
+langsung terdaftar sebagai peserta.
+
+### Cara mengaktifkan
+
+1. Menu **Event** → klik ikon pensil pada event yang dituju
+2. Pada **Pendaftaran mandiri**, pilih salah satu mode:
+
+   | Mode | Perilaku |
+   |---|---|
+   | **Tutup** | Hanya panitia yang bisa mendaftarkan peserta (bawaan) |
+   | **Daftar + langsung hadir** | Pengunjung terdaftar **dan** langsung tercatat hadir — untuk QR yang dipasang di lokasi acara |
+   | **Daftar saja** | Pengunjung terdaftar, tetapi kehadirannya masih perlu di-scan terpisah saat masuk — untuk pra-pendaftaran sebelum hari-H |
+
+3. Simpan. Kartu event kini punya tombol **QR** — klik untuk melihat tautan,
+   menyalinnya, atau mencetak **poster A4** yang siap ditempel di pintu masuk.
+
+### Yang dilihat pengunjung
+
+Setelah memindai, HP mereka membuka halaman pendaftaran (mobile-first, tanpa perlu
+login atau pasang aplikasi). Setelah mengisi form, muncul layar berisi nama, **kode
+peserta**, dan **QR pribadi** mereka untuk disimpan sebagai tangkapan layar.
+
+### Pengamanan
+
+Endpoint ini terbuka untuk umum, jadi ada beberapa lapis pelindung:
+
+- **Tautan tak bisa ditebak** — tiap event memakai token acak 128-bit, bukan nomor
+  urut atau slug. Orang tidak bisa menemukan halaman pendaftaran event lain dengan
+  menerka URL.
+- **Batas laju** — maksimal 12 pendaftaran per 10 menit per alamat IP.
+- **Anti-duplikat** — pendaftar dengan email atau nomor telepon yang sama pada event
+  yang sama dikembalikan ke kode lamanya, tidak dibuatkan baris baru. Ini juga yang
+  menangani orang yang tidak sengaja memindai QR dua kali.
+- **Umpan honeypot** — field tersembunyi yang biasanya diisi bot, tapi tidak terlihat
+  manusia.
+- **Otomatis tertutup** bila status event `selesai` atau mode dikembalikan ke `off`.
+
+Token pendaftaran **tidak berubah** meskipun mode dimatikan lalu dinyalakan lagi —
+poster yang sudah terlanjur dicetak tetap berfungsi.
+
+Peserta yang mendaftar sendiri diberi tanda **Mandiri** di tabel peserta, jadi panitia
+bisa membedakannya dari yang diinput manual atau lewat impor CSV.
 
 ---
 
@@ -168,6 +222,16 @@ Semua endpoint butuh sesi login, kecuali `POST /api/login` dan gambar QR peserta
 | `GET` | `/api/reports/summary` · `/trend` | Data dashboard |
 | `GET` | `/api/reports/event/:id` | Rincian laporan |
 | `GET` | `/api/reports/event/:id/export.csv` | Unduh CSV |
+| `GET` | `/api/events/:id/register-qr.png` | QR poster pendaftaran mandiri |
+
+Endpoint publik (tanpa login, dipakai halaman pendaftaran mandiri):
+
+| Method | Endpoint | Keterangan |
+|---|---|---|
+| `GET` | `/daftar/:token` | Halaman pendaftaran untuk pengunjung |
+| `GET` | `/api/public/event/:token` | Info event yang boleh dipajang |
+| `POST` | `/api/public/register/:token` | Proses pendaftaran (dibatasi laju) |
+| `GET` | `/api/public/qr/:code.png` | QR pribadi peserta |
 
 `POST /api/checkin/scan` selalu membalas HTTP 200 dengan field `result` bernilai
 `ok`, `duplicate`, `wrong_event`, `unknown`, atau `invalid` — supaya layar kiosk bisa

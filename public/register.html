@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Pendaftaran Peserta</title>
+  <meta name="theme-color" content="#08080a" />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/app.css" />
+  <script>
+    if (localStorage.theme === "dark" || (!("theme" in localStorage) &&
+        matchMedia("(prefers-color-scheme: dark)").matches)) {
+      document.documentElement.classList.add("dark");
+    }
+  </script>
+</head>
+<body class="h-full font-sans mesh">
+  <main class="relative z-10 min-h-full flex flex-col items-center px-4 py-8 sm:py-12">
+    <div id="root" class="w-full max-w-md"></div>
+
+    <footer class="mt-auto pt-10 flex items-center gap-2 text-[11px] text-muted">
+      <i data-lucide="scan-line" class="h-3.5 w-3.5"></i> Presensi
+    </footer>
+  </main>
+
+  <div id="toast-root" class="fixed bottom-5 inset-x-4 sm:left-auto sm:right-5 sm:inset-x-auto z-[100] flex flex-col gap-2.5 items-stretch sm:items-end pointer-events-none"></div>
+
+  <script src="/vendor/lucide.min.js"></script>
+  <script src="/js/theme.js"></script>
+  <script src="/js/ui.js"></script>
+  <script src="/js/register.js"></script>
+</body>
+</html>

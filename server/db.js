@@ -71,10 +71,13 @@ const SCHEMA = [
      starts_at   DATETIME NULL,
      ends_at     DATETIME NULL,
      status      ENUM('draft','aktif','selesai') NOT NULL DEFAULT 'aktif',
+     self_register ENUM('off','daftar','hadir') NOT NULL DEFAULT 'off',
+     public_token  VARCHAR(32) NULL,
      color       VARCHAR(16) NOT NULL DEFAULT 'brand',
      created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
      PRIMARY KEY (id),
      UNIQUE KEY uq_events_slug (slug),
+     UNIQUE KEY uq_events_public_token (public_token),
      KEY idx_events_status (status)
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 
@@ -87,6 +90,7 @@ const SCHEMA = [
      phone       VARCHAR(40) NULL,
      org         VARCHAR(190) NULL,
      ticket_type VARCHAR(60) NOT NULL DEFAULT 'Reguler',
+     source      ENUM('panitia','mandiri') NOT NULL DEFAULT 'panitia',
      note        VARCHAR(255) NULL,
      created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
      PRIMARY KEY (id),
@@ -114,10 +118,57 @@ const SCHEMA = [
    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 ];
 
+/**
+ * Kolom yang ditambahkan setelah rilis awal.
+ * CREATE TABLE IF NOT EXISTS tidak menyentuh tabel yang sudah ada, jadi
+ * kolom baru perlu ditambahkan lewat ALTER secara terpisah.
+ */
+const MIGRATIONS = [
+  {
+    table: "events",
+    column: "self_register",
+    ddl: `ALTER TABLE events
+            ADD COLUMN self_register ENUM('off','daftar','hadir')
+            NOT NULL DEFAULT 'off' AFTER status`,
+  },
+  {
+    table: "events",
+    column: "public_token",
+    ddl: `ALTER TABLE events
+            ADD COLUMN public_token VARCHAR(32) NULL AFTER self_register,
+            ADD UNIQUE KEY uq_events_public_token (public_token)`,
+  },
+  {
+    table: "participants",
+    column: "source",
+    ddl: `ALTER TABLE participants
+            ADD COLUMN source ENUM('panitia','mandiri') NOT NULL DEFAULT 'panitia'
+            AFTER ticket_type`,
+  },
+];
+
+async function hasColumn(table, column) {
+  const row = await one(
+    `SELECT 1 AS ada FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1`,
+    [config.database, table, column]
+  );
+  return Boolean(row);
+}
+
+async function migrate() {
+  for (const { table, column, ddl } of MIGRATIONS) {
+    if (await hasColumn(table, column)) continue;
+    await pool.query(ddl);
+    console.log(`  migrasi: ${table}.${column} ditambahkan`);
+  }
+}
+
 export async function initDb() {
   await ensureDatabase();
   pool = mysql.createPool(config);
   for (const stmt of SCHEMA) await pool.query(stmt);
+  await migrate();
   return pool;
 }
 

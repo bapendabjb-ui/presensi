@@ -339,6 +339,7 @@
         const event = events.find((x) => String(x.id) === id);
 
         if (e.target.closest("[data-edit]")) return openEventForm(event);
+        if (e.target.closest("[data-public]")) return openPublicLink(event);
         if (e.target.closest("[data-delete]")) {
           const ok = await confirmDialog({
             title: "Hapus event?",
@@ -367,8 +368,14 @@
     return (
       '<div class="card p-5 flex flex-col transition hover:shadow-[var(--shadow-lift)]" data-event="' + e.id + '">' +
         '<div class="flex items-start justify-between gap-3">' +
-          (STATUS_BADGE[e.status] || "") +
-          '<div class="flex gap-0.5 -mr-1.5 -mt-1">' +
+          '<div class="flex flex-wrap gap-1.5">' +
+            (STATUS_BADGE[e.status] || "") +
+            (e.self_register && e.self_register !== "off"
+              ? '<span class="badge badge-ok"><i data-lucide="qr-code" class="h-3 w-3"></i>' +
+                (e.self_register === "hadir" ? "Daftar mandiri + hadir" : "Daftar mandiri") + "</span>"
+              : "") +
+          "</div>" +
+          '<div class="flex gap-0.5 -mr-1.5 -mt-1 shrink-0">' +
             '<button data-edit class="btn btn-ghost btn-icon" aria-label="Ubah event">' +
               '<i data-lucide="pencil" class="h-4 w-4"></i></button>' +
             '<button data-delete class="btn btn-ghost btn-icon hover:text-rose-600" aria-label="Hapus event">' +
@@ -408,9 +415,70 @@
             '<i data-lucide="users" class="h-4 w-4"></i> Peserta</a>' +
           '<a href="#/reports?event=' + e.id + '" class="btn btn-outline btn-sm flex-1">' +
             '<i data-lucide="clipboard-list" class="h-4 w-4"></i> Laporan</a>' +
+          (e.self_register && e.self_register !== "off"
+            ? '<button data-public class="btn btn-outline btn-sm" title="QR pendaftaran mandiri">' +
+              '<i data-lucide="qr-code" class="h-4 w-4"></i></button>'
+            : "") +
         "</div>" +
       "</div>"
     );
+  }
+
+  const SELF_LABEL = {
+    hadir: "Daftar + langsung hadir",
+    daftar: "Daftar saja",
+  };
+
+  /** Panel berisi tautan & QR pendaftaran mandiri untuk dipasang di lokasi. */
+  function openPublicLink(event) {
+    const url = location.origin + "/daftar/" + event.public_token;
+
+    return modal({
+      title: "QR pendaftaran mandiri",
+      subtitle: event.name,
+      size: "md",
+      body:
+        '<div class="text-center">' +
+          '<span class="badge badge-live">' + esc(SELF_LABEL[event.self_register] || "") + "</span>" +
+
+          '<div class="mt-5 inline-block p-4 bg-white rounded-2xl border line">' +
+            '<img src="/api/events/' + event.id + '/register-qr.png?size=440" ' +
+              'alt="QR pendaftaran" class="h-52 w-52 block" />' +
+          "</div>" +
+
+          '<p class="mt-5 text-[11px] font-bold uppercase tracking-wider text-muted">Tautan pendaftaran</p>' +
+          '<div class="mt-2 flex gap-2">' +
+            '<input id="pub-url" class="input text-[12px] text-center" readonly value="' + esc(url) + '" />' +
+            '<button id="pub-copy" class="btn btn-outline shrink-0" title="Salin tautan">' +
+              '<i data-lucide="copy" class="h-4 w-4"></i></button>' +
+          "</div>" +
+
+          '<div class="mt-5 rounded-xl surface-sunken p-4 flex gap-3 text-left">' +
+            '<i data-lucide="info" class="h-4 w-4 text-brand-500 shrink-0 mt-0.5"></i>' +
+            '<p class="text-[12px] leading-relaxed text-muted">' +
+              (event.self_register === "hadir"
+                ? "Pengunjung yang memindai QR ini langsung terdaftar <b>dan</b> tercatat hadir. Cocok dipasang di pintu masuk saat hari-H."
+                : "Pengunjung yang memindai QR ini terdaftar sebagai peserta, tetapi kehadirannya masih perlu di-scan terpisah saat masuk.") +
+            "</p>" +
+          "</div>" +
+        "</div>",
+      footer:
+        '<button data-close class="btn btn-outline">Tutup</button>' +
+        '<a href="/poster/' + event.id + '" target="_blank" class="btn btn-primary">' +
+          '<i data-lucide="printer" class="h-4 w-4"></i> Cetak poster A4</a>',
+      onMount(wrap) {
+        wrap.querySelector("#pub-copy").addEventListener("click", async () => {
+          const input = wrap.querySelector("#pub-url");
+          try {
+            await navigator.clipboard.writeText(url);
+          } catch {
+            // Clipboard API butuh HTTPS — pilih teksnya supaya bisa disalin manual.
+            input.select();
+          }
+          toast("Tautan disalin.");
+        });
+      },
+    });
   }
 
   /** Ubah DATETIME MySQL jadi nilai untuk <input type="datetime-local">. */
@@ -448,6 +516,26 @@
                 s.charAt(0).toUpperCase() + s.slice(1) + "</option>"
               ).join("") + "</select>"
             ) +
+          "</div>" +
+
+          '<div class="pt-4 border-t line">' +
+            '<label class="label" for="f-self_register">Pendaftaran mandiri</label>' +
+            selectWrap(
+              '<select id="f-self_register" name="self_register" class="input">' +
+              [
+                ["off", "Tutup — hanya panitia yang mendaftarkan"],
+                ["hadir", "Daftar + langsung hadir (untuk di lokasi acara)"],
+                ["daftar", "Daftar saja — kehadiran dicatat terpisah"],
+              ].map(([value, label]) =>
+                '<option value="' + value + '"' +
+                ((event?.self_register || "off") === value ? " selected" : "") + ">" +
+                esc(label) + "</option>"
+              ).join("") + "</select>"
+            ) +
+            '<p class="text-[11px] text-muted mt-1.5 leading-relaxed">' +
+              "Kalau dinyalakan, event ini mendapat QR pendaftaran untuk dipasang di pintu masuk. " +
+              "Siapa pun yang memindainya bisa mendaftar sendiri lewat HP." +
+            "</p>" +
           "</div>" +
           '<p id="form-error" class="hidden text-sm font-medium text-rose-600 dark:text-rose-400"></p>' +
         "</form>",
@@ -668,7 +756,13 @@
           esc(p.code) + "</code></td>" +
 
         '<td class="td text-muted">' + esc(p.org || "—") + "</td>" +
-        '<td class="td"><span class="badge badge-off">' + esc(p.ticket_type) + "</span></td>" +
+        '<td class="td"><div class="flex flex-wrap gap-1.5">' +
+          '<span class="badge badge-off">' + esc(p.ticket_type) + "</span>" +
+          (p.source === "mandiri"
+            ? '<span class="badge badge-live" title="Mendaftar sendiri lewat QR">' +
+              '<i data-lucide="qr-code" class="h-3 w-3"></i>Mandiri</span>'
+            : "") +
+        "</div></td>" +
 
         '<td class="td">' + (hadir
           ? '<div><span class="badge badge-ok"><i data-lucide="check" class="h-3 w-3"></i>Hadir</span>' +

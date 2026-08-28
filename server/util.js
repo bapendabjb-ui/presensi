@@ -10,6 +10,15 @@ export function makeCode(prefix = "PRS") {
   return `${prefix}-${out}`;
 }
 
+/**
+ * Token acak untuk tautan pendaftaran publik.
+ * Panjang 22 karakter base64url (128 bit) — tidak bisa ditebak, jadi orang
+ * tidak bisa menemukan halaman pendaftaran event lain dengan menerka URL.
+ */
+export function makeToken() {
+  return crypto.randomBytes(16).toString("base64url");
+}
+
 export function slugify(text) {
   return String(text)
     .toLowerCase()
